@@ -1,0 +1,291 @@
+def test_reservation_history():
+    """
+    Test Case 7: Displaying Reservation History
+    
+    This test verifies that:
+    - Guest booking history is maintained
+    - Reservation history can be viewed
+    - All booking details are correctly displayed
+    """
+    print("\n" + "="*60)
+    print("TEST CASE 7: Displaying Reservation History")
+    print("="*60)
+    
+    hotel_system = HotelSystem()
+    
+    # Add rooms
+    hotel_system.add_single_room(101, 100.0, ["Wi-Fi", "TV"])
+    hotel_system.add_double_room(201, 150.0, ["Wi-Fi", "TV", "Mini-bar"])
+    hotel_system.add_suite_room(301, 250.0, ["Wi-Fi", "TV", "Mini-bar", "Jacuzzi"])
+    
+    # Example 1: View history with multiple bookings
+    print("\nExample 1: View history with multiple bookings")
+    try:
+        # Register a guest
+        guest = hotel_system.register_guest("Alexander Johnson", "alex@example.com", "555-123-4567")
+        
+        # Make multiple bookings
+        single_room = hotel_system._rooms[101]
+        double_room = hotel_system._rooms[201]
+        
+        # Booking 1 - Past stay
+        past_check_in = datetime.now() - timedelta(days=15)
+        past_check_out = datetime.now() - timedelta(days=10)
+        past_booking = hotel_system.make_booking(guest, single_room, past_check_in, past_check_out)
+        past_booking._status = "Completed"  # Manually set to completed for this test
+        
+        # Booking 2 - Current stay
+        current_check_in = datetime.now() - timedelta(days=2)
+        current_check_out = datetime.now() + timedelta(days=3)
+        current_booking = hotel_system.make_booking(guest, double_room, current_check_in, current_check_out)
+        current_booking._status = "Active"  # Manually set to active for this test
+        
+        # Booking 3 - Future stay
+        future_check_in = datetime.now() + timedelta(days=30)
+        future_check_out = datetime.now() + timedelta(days=35)
+        future_booking = hotel_system.make_booking(guest, hotel_system._rooms[301], future_check_in, future_check_out)
+        
+        # Display booking history (in a real system, this would be a formatted display)
+        print(f"Reservation history for guest: {guest.get_name()}")
+        
+        bookings = guest._booking_history
+        print(f"Found {len(bookings)} bookings:")
+        
+        for i, booking in enumerate(bookings, 1):
+            print(f"\nBooking {i}:")
+            print(f"Room: {booking.room._room_number} ({booking.room._room_type})")
+            print(f"Check-in: {booking.check_in.strftime('%Y-%m-%d')}")
+            print(f"Check-out: {booking.check_out.strftime('%Y-%m-%d')}")
+            print(f"Status: {booking._status}")
+            print(f"Total price: ${booking.total_price:.2f}")
+        
+        # Verify bookings in history
+        assert len(bookings) == 3, "Should have 3 bookings in history"
+        
+        # Verify that the past booking has "Completed" status
+        past_bookings = [b for b in bookings if b._status == "Completed"]
+        assert len(past_bookings) == 1, "Should have 1 completed booking"
+        
+        print("Booking history verified successfully")
+    except AssertionError as e:
+        print(f"Verification error: {e}")
+    except Exception as e:
+        print(f"Error retrieving booking history: {e}")
+    
+    # Example 2: Filter history by booking status
+    print("\nExample 2: Filter history by booking status")
+    try:
+        # Register a guest with a more diverse booking history
+        guest2 = hotel_system.register_guest("Maria Garcia", "maria@example.com", "555-987-6543")
+        
+        # Add various bookings with different statuses
+        room = hotel_system._rooms[102] = SingleRoom(102, 105.0, ["Wi-Fi", "TV"])
+        
+        # Add 2 completed bookings
+        for i in range(2):
+            past_check_in = datetime.now() - timedelta(days=30 + (i * 10))
+            past_check_out = datetime.now() - timedelta(days=27 + (i * 10))
+            booking = hotel_system.make_booking(guest2, room, past_check_in, past_check_out)
+            booking._status = "Completed"
+        
+        # Add 1 cancelled booking
+        cancelled_check_in = datetime.now() + timedelta(days=5)
+        cancelled_check_out = datetime.now() + timedelta(days=8)
+        cancelled_booking = hotel_system.make_booking(guest2, room, cancelled_check_in, cancelled_check_out)
+        cancelled_booking._status = "Cancelled"
+        
+        # Add 1 upcoming booking
+        upcoming_check_in = datetime.now() + timedelta(days=15)
+        upcoming_check_out = datetime.now() + timedelta(days=18)
+        upcoming_booking = hotel_system.make_booking(guest2, room, upcoming_check_in, upcoming_check_out)
+        upcoming_booking._status = "Confirmed"
+        
+        # Filter bookings by status
+        print(f"Filtering bookings by status for guest: {guest2.get_name()}")
+        
+        # Get all bookings
+        all_bookings = guest2._booking_history
+        
+        # Filter completed bookings
+        completed_bookings = [b for b in all_bookings if b._status == "Completed"]
+        
+        # Filter upcoming bookings
+        upcoming_bookings = [b for b in all_bookings if b._status in ["Confirmed", "Pending"]]
+        
+        # Filter cancelled bookings
+        cancelled_bookings = [b for b in all_bookings if b._status == "Cancelled"]
+        
+        # Print filtered results
+        print(f"All bookings: {len(all_bookings)}")
+        print(f"Completed bookings: {len(completed_bookings)}")
+        print(f"Upcoming bookings: {len(upcoming_bookings)}")
+        print(f"Cancelled bookings: {len(cancelled_bookings)}")
+        
+        # Verify filtered results
+        assert len(completed_bookings) == 2, "Should have 2 completed bookings"
+        assert len(upcoming_bookings) == 1, "Should have 1 upcoming booking"
+        assert len(cancelled_bookings) == 1, "Should have 1 cancelled booking"
+        
+        # Display upcoming bookings
+        print("\nUpcoming bookings:")
+        for i, booking in enumerate(upcoming_bookings, 1):
+            print(f"{i}. Room {booking.room._room_number} - {booking.check_in.strftime('%Y-%m-%d')} to {booking.check_out.strftime('%Y-%m-%d')}")
+        
+        print("Booking filtering verified successfully")
+    except AssertionError as e:
+        print(f"Verification error: {e}")
+    except Exception as e:
+        print(f"Error filtering booking history: {e}")
+
+def test_reservation_cancellation():
+    """
+    Test Case 8: Cancellation of a Reservation
+    
+    This test verifies that:
+    - Reservations can be cancelled
+    - Room status is updated after cancellation
+    - Refund is processed if applicable
+    - Cancellation notification is sent
+    - Exception handling for invalid cancellations
+    """
+    print("\n" + "="*60)
+    print("TEST CASE 8: Cancellation of a Reservation")
+    print("="*60)
+    
+    hotel_system = HotelSystem()
+    
+    # Add rooms
+    hotel_system.add_single_room(101, 100.0, ["Wi-Fi", "TV"])
+    hotel_system.add_suite_room(301, 250.0, ["Wi-Fi", "TV", "Mini-bar", "Jacuzzi"])
+    
+    # Register a guest
+    guest = hotel_system.register_guest("Christopher Wong", "chris@example.com", "555-444-7777")
+    
+    # Example 1: Standard cancellation with refund
+    print("\nExample 1: Standard cancellation with refund")
+    try:
+        # Make a booking far in the future (to qualify for full refund)
+        single_room = hotel_system._rooms[101]
+        check_in = datetime.now() + timedelta(days=30)  # 30 days from now
+        check_out = datetime.now() + timedelta(days=35)  # 5-night stay
+        
+        booking = hotel_system.make_booking(guest, single_room, check_in, check_out)
+        
+        # Process payment for the booking
+        payment = hotel_system.process_payment(booking, "Credit Card")
+        
+        print(f"Created booking: Room {single_room._room_number} from {check_in.strftime('%Y-%m-%d')} to {check_out.strftime('%Y-%m-%d')}")
+        print(f"Payment processed: ${payment._amount:.2f}")
+        
+        # Verify room status before cancellation
+        assert not single_room._is_available, "Room should be marked as unavailable after booking"
+        
+        # Cancel the booking
+        print("\nCancelling booking...")
+        cancellation_result = hotel_system.cancel_booking(booking)
+        
+        # Verify cancellation
+        assert cancellation_result == True, "Cancellation should be successful"
+        assert booking._status == "Cancelled", "Booking status should be changed to Cancelled"
+        assert single_room._is_available, "Room should be marked as available after cancellation"
+        
+        # Verify refund
+        assert payment._status == "Refunded", "Payment status should be updated to Refunded"
+        
+        print("Cancellation successful:")
+        print(f"Booking status: {booking._status}")
+        print(f"Room {single_room._room_number} availability: {single_room._is_available}")
+        print(f"Payment status: {payment._status}")
+    except AssertionError as e:
+        print(f"Verification error: {e}")
+    except Exception as e:
+        print(f"Error during cancellation: {e}")
+    
+    # Example 2: Cancellation with partial refund (late cancellation)
+    print("\nExample 2: Cancellation with partial refund (late cancellation)")
+    try:
+        # Make a booking for the near future (to qualify for partial refund)
+        suite_room = hotel_system._rooms[301]
+        check_in = datetime.now() + timedelta(days=3)  # Only 3 days from now
+        check_out = datetime.now() + timedelta(days=7)  # 4-night stay
+        
+        booking = hotel_system.make_booking(guest, suite_room, check_in, check_out)
+        
+        # Process payment for the booking
+        payment = hotel_system.process_payment(booking, "Credit Card")
+        
+        print(f"Created booking: Room {suite_room._room_number} from {check_in.strftime('%Y-%m-%d')} to {check_out.strftime('%Y-%m-%d')}")
+        print(f"Payment processed: ${payment._amount:.2f}")
+        
+        # Verify room status before cancellation
+        assert not suite_room._is_available, "Room should be marked as unavailable after booking"
+        
+        # Cancel the booking
+        print("\nCancelling booking (late cancellation)...")
+        cancellation_result = hotel_system.cancel_booking(booking, apply_penalty=True)
+        
+        # Verify cancellation
+        assert cancellation_result == True, "Cancellation should be successful"
+        assert booking._status == "Cancelled", "Booking status should be changed to Cancelled"
+        assert suite_room._is_available, "Room should be marked as available after cancellation"
+        
+        # Verify partial refund
+        assert payment._status == "Partially Refunded", "Payment status should be updated to Partially Refunded"
+        
+        # Calculate expected refund amount (in a real system, this would use a policy)
+        expected_refund = payment._amount * 0.5  # 50% refund for this example
+        
+        print("Cancellation successful with partial refund:")
+        print(f"Booking status: {booking._status}")
+        print(f"Room {suite_room._room_number} availability: {suite_room._is_available}")
+        print(f"Payment status: {payment._status}")
+        print(f"Refund amount: ${expected_refund:.2f} (50% of original payment)")
+    except AssertionError as e:
+        print(f"Verification error: {e}")
+    except Exception as e:
+        print(f"Error during cancellation: {e}")
+    
+    # Example 3: Try to cancel an already checked-in booking (should fail)
+    print("\nExample 3: Try to cancel an already checked-in booking")
+    try:
+        # Create a booking that's already active
+        active_room = hotel_system._rooms[101]  # Reuse room 101 which should be available again
+        check_in = datetime.now() - timedelta(days=1)  # Started yesterday
+        check_out = datetime.now() + timedelta(days=3)  # Ends in 3 days
+        
+        booking = hotel_system.make_booking(guest, active_room, check_in, check_out)
+        booking._status = "Active"  # Manually mark as active/checked-in
+        
+        print(f"Created active booking: Room {active_room._room_number} from {check_in.strftime('%Y-%m-%d')} to {check_out.strftime('%Y-%m-%d')}")
+        print(f"Booking status: {booking._status} (already checked in)")
+        
+        # Try to cancel the booking
+        print("\nAttempting to cancel an active booking...")
+        cancellation_result = hotel_system.cancel_booking(booking)
+        
+        # Verify cancellation was not allowed
+        assert cancellation_result == False, "Cancellation should fail for active bookings"
+        assert booking._status == "Active", "Booking status should remain Active"
+        assert not active_room._is_available, "Room should remain unavailable"
+        
+        print("Cancellation correctly denied for active booking")
+    except AssertionError as e:
+        print(f"Verification error: {e}")
+    except Exception as e:
+        print(f"Error during cancellation attempt: {e}")
+
+def run_tests():
+    """
+    Run all test cases
+    """
+    test_guest_account_creation()
+    test_search_available_rooms()
+    test_room_reservation()
+    test_booking_confirmation()
+    test_invoice_generation()
+    test_payment_processing()
+    test_reservation_history()
+    test_reservation_cancellation()
+
+if __name__ == "__main__":
+    run_tests()
